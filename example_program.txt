@@ -1,0 +1,19 @@
+Imm_byte R0 255
+Imm_byte R1 0
+Imm_byte R2 1
+
+Main:add R1 R2 R1
+beq R0 R1 route0
+write R1
+goto Main
+
+route0:Imm_byte R3 0
+Imm_byte R4 0
+
+rm0:sub R1 R2 R1
+beq R1 R4 Main
+
+not R3
+write R3
+
+goto rsv0
