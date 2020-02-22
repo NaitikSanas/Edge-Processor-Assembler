@@ -1,5 +1,24 @@
 import edge32ASM_components as edge 
 
+def evaluate_executable(file, mem_size):
+        if not edge.file_error(): #if file is found
+            print('building executable for: ', mem_size,'x 32 program memory')
+            edge.parse_labels (file) #parse address labels
+            if edge.check_err():#if labels are re-declared
+                print('labels parsing error') #throw label error
+            else: 
+                exe_file = edge.decode_instruction_labels (file)#else decode instructions
+                if edge.check_err():#if invalid keyword found
+                    print ('syntax error')#throw syntax error
+                    return
+                else:
+                    exe_file = edge.postProcess0(exe_file) #post process
+                    exe_file = edge.finalize(exe_file)#finalize
+                    edge.write_executable(exe_file, mem_size)#write exe file
+        else:
+            print('select valid file first')
+            return
+
 def get_input():
     x = input("\n Enter a Command: ")
     return x
@@ -92,22 +111,3 @@ def parseCommads(x):
                     print('Enter valid command')
         else:
             print("':' or Argument is missing in command.")    
-
-def evaluate_executable(file, mem_size):
-        if not edge.file_error(): #if file is found
-            print('building executable for: ', mem_size,'x 32 program memory')
-            edge.parse_labels (file) #parse address labels
-            if edge.check_err():#if labels are re-declared
-                print('labels parsing error') #throw label error
-            else: 
-                exe_file = edge.decode_instruction_labels (file)#else decode instructions
-                if edge.check_err():#if invalid keyword found
-                    print ('syntax error')#throw syntax error
-                    return
-                else:
-                    exe_file = edge.postProcess0(exe_file) #post process
-                    exe_file = edge.finalize(exe_file)#finalize
-                    edge.write_executable(exe_file, mem_size)#write exe file
-        else:
-            print('select valid file first')
-            return
