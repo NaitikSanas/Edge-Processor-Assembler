@@ -1,0 +1,18 @@
+byte R0 00000001 #define byte 
+int_8 R1 7 #define shift word index
+
+shift_left_main:int_8 R2 0 #state 0
+
+shift_left:write R0 #write Byte to bus
+shift_L R0 #shift left R0 
+inc R2 #increment R2
+beq R2 R1 shift_right #compare if R0 equals to SWI
+goto shift_left
+
+shift_right:int_8 R2 0
+
+shift_right_main:write R0 #state 1
+shift_R R0
+inc R2
+beq R2 R1 shift_left_main
+goto shift_right_main

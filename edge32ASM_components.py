@@ -38,7 +38,6 @@ def get_address(target_label):
 #each found label is appended in list named label in following format : " 'lable_name' 'address'  " 
 #address calculated for specific label by counting the valid instructions found in program file
 def parse_labels(program):  
-        label_found = False
         
         print('parsing labels..')
         global label
@@ -63,8 +62,7 @@ def parse_labels(program):
 
                         lut = container[0] + ' ' +str(addr)
                         label.append(lut)
-                    else: 
-                        label_found = False
+
                     addr += 1
 
 '''
@@ -80,36 +78,28 @@ so to avoid errors we read the second element of list which is actual instructio
         
 def decode_instruction_labels(program): 
         global error
-
         print('decoding instruction labels...')
         label_found = False
         binfile = []
         global label
         for i in range(len(program)):
-                
+
                 container = program[i].split(':')
-                
                 if len(container) > 1:
                         label_found = True
-
                 else: 
                         label_found = False
-
                 if program[i] != '':
                     if label_found:
                         instruction = container[1].split(' ')
                         instruction =  inst_decode(instruction, i)
-
                     else:
                         instruction = container[0].split(' ')
-                        instruction = inst_decode(instruction, i)
-                
+                        instruction = inst_decode(instruction, i)                
                     if error:
                         break
-
                     binfile.append(instruction)
         return(binfile)
-
 
 def get_Reg_index(R):
     if R == 'R0' :
@@ -124,21 +114,22 @@ def get_Reg_index(R):
         return "00100"   
     elif R == 'R5':
         return "00101"
+    elif R == 'R6':
+        return "00110"
+    elif R == 'R7':
+        return "00111"
+
     else:
         return 'x'
 
 
 def address_padding (address):
         address_size = 16
-
         address = bin(address) 
         addr = address.split('b')
         width = len(addr[1])
-
         padding = address_size - width
-
         acc = ''
-
         for i in range(padding):
                 acc += '0'
         return acc + addr[1]
@@ -147,6 +138,15 @@ def int2bin(value):
     value = str(bin(int(value)))
     value = value.split('b')
     padding = 8 - len(value[1])
+    acc = ''
+    for i in range(padding):
+        acc += '0'
+    return (acc+value[1])
+
+def int2bin16(value):
+    value = str(bin(int(value)))
+    value = value.split('b')
+    padding = 16 - len(value[1])
     acc = ''
     for i in range(padding):
         acc += '0'
@@ -164,7 +164,8 @@ def inst_decode(instruction, i):
         error = False
 
         opcode = instruction[0]
-        if opcode == 'Imm_byte': 
+        
+        if opcode == 'int_8': 
                 R0 = instruction[1]
                 val =int2bin(instruction[2])
                 R = get_Reg_index(R0)
@@ -172,8 +173,28 @@ def inst_decode(instruction, i):
                     error = True
                     print('invalid Register index atline {}'.format(i+1))
                     return
-                return(['000011',R, val])
+                return(['000010',R, val])
+        
+        elif opcode == 'byte':
+            R0 = get_Reg_index(instruction[1])
+            val = instruction[2]
+            if rpc(R0):
+                    error = True
+                    print('invalid Register index atline {}'.format(i+1))
+                    return
+            return(['000010', R0, val])
 
+
+
+        elif opcode == 'int_16':
+                R0 = instruction[1]
+                val =int2bin16(instruction[2])
+                R = get_Reg_index(R0)
+                if rpc(R):
+                    error = True
+                    print('invalid Register index atline {}'.format(i+1))
+                    return
+                return(['000011',R, val])
 
         elif opcode == 'not':
             R0 = get_Reg_index(instruction[1])
@@ -181,26 +202,60 @@ def inst_decode(instruction, i):
                     error = True
                     print('invalid Register index at line {}'.format(i+1))
                     return
-
             fx = "1000"
             return(['000001', R0, R0, R0, fx])
 
+        elif opcode == 'inc':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register index at line {}'.format(i+1))
+                    return
+            fx = "1001"
+            return(['000001', R0, R0, R0, fx])
+
+        elif opcode == 'dec':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register index at line {}'.format(i+1))
+                    return
+            fx = "1010"
+            return(['000001', R0, R0, R0, fx])
+
+        elif opcode == 'shift_L':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register index at line {}'.format(i+1))
+                    return
+            fx = "1100"
+            return(['000001', R0, R0, R0, fx])
+
+        elif opcode == 'shift_R':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register index at line {}'.format(i+1))
+                    return
+            fx = "1101"
+            return(['000001', R0, R0, R0, fx])
+
+        elif opcode == 'HLT':
+            return(['000000'])
         
         elif opcode == 'add':
                 R0 = get_Reg_index(instruction[1])
                 R1 = get_Reg_index(instruction[2])
                 R2 = get_Reg_index(instruction[3])
-
                 if rpc(R0):
                     error = True
                     print('invalid Register 0 index at line {}'.format(i+1))
                     return
-
                 if rpc(R1):
                     error = True
                     print('invalid Register 1 index at line {}'.format(i+1))
                     return
-
                 if rpc(R2):
                     error = True
                     print('invalid Register 2 index at line {}'.format(i+1))
@@ -241,7 +296,7 @@ def inst_decode(instruction, i):
 
                 else:
                     addr = address_padding(int(addr))
-                    return(['000101', addr])
+                    return(['000100', addr])
         
         elif opcode == 'beq':
             R0 = get_Reg_index(instruction[1])
@@ -264,16 +319,143 @@ def inst_decode(instruction, i):
 
             else:
                 addr = address_padding(int(addr))
-            return(['000110', R0, R1,addr])
-        
+            return(['000101', R0, R1,addr])
+
+        elif opcode == 'bgt':
+            R0 = get_Reg_index(instruction[1])
+            R1 = get_Reg_index(instruction[2])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register 0 index at line {}'.format(i+1))
+                    return
+
+            if rpc(R1):
+                    error = True
+                    print('invalid Register 1 index at line {}'.format(i+1))
+                    return
+
+            addr = get_address(instruction[3])
+            if addr == None:
+                print('undefined Label found at line {}'.format(i+1))
+                error = True
+                return
+
+            else:
+                addr = address_padding(int(addr))
+            return(['010001', R0, R1,addr])
+
+        elif opcode == 'blt':
+            R0 = get_Reg_index(instruction[1])
+            R1 = get_Reg_index(instruction[2])
+            if rpc(R0):
+                    error = True
+                    print('invalid Register 0 index at line {}'.format(i+1))
+                    return
+
+            if rpc(R1):
+                    error = True
+                    print('invalid Register 1 index at line {}'.format(i+1))
+                    return
+
+            addr = get_address(instruction[3])
+            if addr == None:
+                print('undefined Label found at line {}'.format(i+1))
+                error = True
+                return
+
+            else:
+                addr = address_padding(int(addr))
+            return(['010010', R0, R1,addr])
+
+
         elif opcode == 'write':
             R0 = get_Reg_index(instruction[1])
             if rpc(R0):
                     error = True
                     print('invalid Register 0 index at line {}'.format(i+1))
                     return
-            return(['000111', R0])
-        
+            return(['000110', R0])
+
+        elif opcode == 'set_address':
+            val = int2bin16(instruction[1]) 
+            return(['000111',val])
+
+        elif opcode == 'ldem':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            val = int2bin16(instruction[2])
+            return(['001010', R0, val])
+
+        elif opcode == 'stem':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            val = int2bin16(instruction[2])
+            return(['001011', R0, val])
+
+        elif opcode == 'read_seq_e':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            return['001101', R0]
+
+        elif opcode == 'write_seq_e':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            return['001110', R0]
+
+        elif opcode == 'get_indirect_addr':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            return['001111', R0]
+
+        elif opcode == 'TX':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            return['010011', R0]
+
+        elif opcode == 'RX':
+            R0 = get_Reg_index(instruction[1])
+            if rpc(R0):
+                error = True
+                print('invalid Register 1 index at line {}'.format(i+1))
+                return
+            return['010100', R0]
+
+        elif opcode == 'call':
+            addr = get_address(instruction[1])
+            if addr == None:
+                print('undefined Label found at line {}'.format(i+1))
+                error = True
+                return
+            else:
+                addr = address_padding(int(addr))
+                return(['011010', addr])
+        elif opcode == 'inc_addr':
+            return(['001000'])
+
+        elif opcode == 'dec_addr':
+            return(['001001'])
+
+        elif opcode == 'return':
+            return['011011']
+
         else:
             print('invalid instruction at line {}'. format(i+1))
             error = True
@@ -315,33 +497,26 @@ def end(c):
     
 
 def write_executable(bin, mem_size):
-
     end = '"00000000000000000000000000000000"\n'
     start = '"00000000000000000000000000000000",\n'
-
     print('writing executable file')
     with open('Edge_executable_binary.txt', 'w') as f:
         require_padding = False
         for index,c in enumerate(bin):
             padding = mem_size - len(bin)
-
             if len(bin) < mem_size: #start
                 c = '"' + c + '"' +  ','+ '\n'
-
-            elif len(bin) == mem_size: 
-                
+            elif len(bin) == mem_size:                
                 if index == (len(bin) - 1):
-                    c = end(c) #end
+                    c = ('"' + c + '"' + ','+ '\n') #end
                 else:
-                    c = start(c) #start
+                    c = ('"' + c + '"' + ','+ '\n') #start
             else:
                 print('ERROR!: "program exceeds the defined size of memory which is {} DWORD'.format(mem_size))
                 print('use cmd "set_mem_size:arg" to set size of memory')
-                return
-            
+                return            
             f.write(c)
-        print('program size: ', len(bin))
-        
+        print('program size: ', len(bin))      
         for i in range(padding):
             if i == (padding - 1):
                 f.write(end) #end

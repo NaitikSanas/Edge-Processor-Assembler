@@ -18,7 +18,7 @@ def evaluate_executable(file, mem_size):
         else:
             print('select valid file first')
             return
-
+		
 def get_input():
     x = input("\n Enter a Command: ")
     return x
@@ -44,7 +44,7 @@ def parseCommads(x):
                 cmd = x[0]
                 arg = x[1]
                 if cmd == 'select' :
-                        file_name = arg
+                        file_name = arg + '.txt'
                         file = edge.openfile(file_name)
 
                         if edge.file_error():
@@ -64,7 +64,7 @@ def parseCommads(x):
                             evaluate_executable(file, mem_size)
 
                 elif cmd == 'sel_asm':
-                    file_name = arg
+                    file_name = arg + '.txt'
 
                     file = edge.openfile(file_name)
                     if edge.file_error():
